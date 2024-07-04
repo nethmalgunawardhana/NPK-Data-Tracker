@@ -1,0 +1,56 @@
+/* Channel3Table.css */
+body {
+    font-family: Arial, sans-serif;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+}
+
+th {
+    background-color: #2e2a2a;
+}
+
+.navbar-left {
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+}
+
+.navbar {
+    padding: 15px 40px;
+}
+
+h1 {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.btn {
+    margin-left: 10px;
+    margin-bottom: 25px;
+}
+
+.navbar-brand img {
+    margin-right: 10px;
+}
+
+@media (max-width: 768px) {
+    table {
+        font-size: 14px;
+    }
+
+    th, td {
+        padding: 6px 8px;
+    }
+
+    .navbar {
+        padding: 10px 20px;
+    }
+}

@@ -1,0 +1,49 @@
+b1-container{
+  background-color: black;
+}
+.btn-gradient {
+  background-color: #0b5017;
+  border-radius: 50px;
+  border: 3px solid black;
+  transition: background-color 0.3s ease;
+}
+
+.btn-gradient span {
+  padding: 0.5rem 1rem;
+  text-align: center;
+  font-size: 25px;
+  color: rgb(212, 212, 212);
+}
+
+.btn-gradient:hover {
+  background-color: #166107; 
+}
+
+.blinking-button {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+.welcome-title {
+  font-size: 65px;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+.description {
+  font-size: 35px;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 767px) {
+  .welcome-title {
+    font-size: 53px;
+  }
+  .description {
+    font-size: 36px;
+  }
+
+}

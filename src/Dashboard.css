@@ -1,0 +1,56 @@
+.b4{
+   max-height: fit-content;
+}
+.b3 {
+   margin:15px 10px 10px 20px;
+   padding-bottom: 10px;
+}
+
+.custom-card {
+    background-color: #f0f0f029; /* Grey background with transparency */
+    border-radius: 15px; /* Curved borders */
+    transition: transform 0.3s ease;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(188, 188, 188, 0.94);
+    color: white;
+    margin-bottom: 20px;
+    width: 460px; /* Ensure cards have a consistent width */
+}
+
+.custom-card:hover {
+    transform: scale(1.05); /* Zoom effect on hover */
+}
+
+.card-img-top {
+    height: 300px; /* Increase the image size */
+    object-fit: cover;
+}
+
+.pulse-btn {
+    animation: pulse 2s infinite;
+    align-self: center; /* Center align the button within the card */
+    width: auto; /* Make the button small */
+}
+
+@keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.15);
+    }
+    100% {
+      transform: scale(1);
+    }
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* Center align the row within the container */
+}
+@media (max-width: 600px) {
+  .custom-card {
+    width: 350px;
+  }
+}
