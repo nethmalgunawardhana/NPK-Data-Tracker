@@ -51,6 +51,7 @@
 }
 @media (max-width: 600px) {
   .custom-card {
-    width: 350px;
+    width: 380px;
+    
   }
 }
