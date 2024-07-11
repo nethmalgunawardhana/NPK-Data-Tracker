@@ -26,7 +26,7 @@ const SendLocationToThingSpeak = () => {
   };
 
   const sendLocationToThingSpeak = (latitude, longitude) => {
-    const apiKey = 'N3RMTYVE4L5UVCTR'; 
+    const apiKey = process.env.REACT_APP_CHANNEL1_WRITE_API_KEY;
     const url = `https://api.thingspeak.com/update?api_key=${apiKey}&field1=${latitude}&field2=${longitude}`;
 
     fetch(url)

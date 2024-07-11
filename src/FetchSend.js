@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './FetchSend.css';
 import Swal from 'sweetalert2';
-
+import { db } from './firebase'; // Ensure this import points to your Firebase configuration file
+import { collection, query, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
 
 const ThingSpeakDataManagement = () => {
   const [locationData, setLocationData] = useState([]);
@@ -15,33 +16,34 @@ const ThingSpeakDataManagement = () => {
   });
 
   const channel1Id = process.env.REACT_APP_CHANNEL1_ID;
-  const channel2Id = process.env.REACT_APP_CHANNEL2_ID;
   const apiKeyReadChannel1 = process.env.REACT_APP_CHANNEL1_API_KEY;
-  const apiKeyReadChannel2 = process.env.REACT_APP_CHANNEL2_API_KEY;
   const apiKeyWriteChannel3 = process.env.REACT_APP_CHANNEL3_WRITE_API_KEY;
-  const maxResults = 15;
-  const pollingInterval = 15000;
+  const maxResultsLocation = 15;
+  const maxResultsNPK = 50;
+  const pollingInterval = 2000;
 
   useEffect(() => {
     console.log('Environment Variables:', {
       channel1Id,
-      channel2Id,
       apiKeyReadChannel1,
-      apiKeyReadChannel2,
       apiKeyWriteChannel3
     });
 
     fetchDataAndUpdateTables();
     const interval = setInterval(fetchDataAndUpdateTables, pollingInterval);
-    return () => clearInterval(interval);
+    const unsubscribeFirestore = fetchFirestoreData();
+
+    return () => {
+      clearInterval(interval);
+      unsubscribeFirestore();
+    };
   }, []);
 
   const fetchDataAndUpdateTables = () => {
-    fetchData(channel1Id, setLocationData, ['field1', 'field2', 'created_at'], apiKeyReadChannel1);
-    fetchData(channel2Id, setNpkData, ['field1', 'field2', 'field3', 'created_at'], apiKeyReadChannel2);
+    fetchData(channel1Id, setLocationData, ['field1', 'field2', 'created_at'], apiKeyReadChannel1, maxResultsLocation);
   };
 
-  const fetchData = (channelId, setData, fields, readApiKey) => {
+  const fetchData = (channelId, setData, fields, readApiKey, maxResults) => {
     if (!channelId || !readApiKey) {
       console.error('Missing channel ID or API key');
       return;
@@ -65,18 +67,48 @@ const ThingSpeakDataManagement = () => {
         console.error('Error fetching data:', error);
         Swal.fire({
           title: 'Error!',
-          text: 'Failed to fetch data. Please try again later.',
+          text: 'Failed to fetch location data. Please try again later.',
           icon: 'error',
           confirmButtonText: 'OK'
         });
       });
   };
 
+  const fetchFirestoreData = () => {
+    const npkRef = collection(db, 'NPK');
+    const q = query(npkRef, orderBy('timestamp', 'desc'), limit(maxResultsNPK));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const npkData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('Firestore document data:', data);
+        
+        return {
+          nitrogen: data.nitrogen,
+          phosphorus: data.phosphorus,
+          potassium: data.potassium,
+          selected: false
+        };
+      });
+      setNpkData(npkData);
+    }, (error) => {
+      console.error('Error fetching data from Firestore:', error);
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to fetch NPK data from Firestore. Please try again later.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    });
+
+    return unsubscribe;
+  };
+
   const handleCheckboxChange = (index, dataType) => {
     if (dataType === 'location') {
-      setLocationData(locationData.map((item, i) => ({...item, selected: i === index})));
+      setLocationData(locationData.map((item, i) => ({...item, selected: i === index ? !item.selected : false})));
     } else {
-      setNpkData(npkData.map((item, i) => ({...item, selected: i === index})));
+      setNpkData(npkData.map((item, i) => ({...item, selected: i === index ? !item.selected : false})));
     }
   };
 
@@ -88,9 +120,9 @@ const ThingSpeakDataManagement = () => {
       updateChannel3Data(
         selectedLocation.field1,
         selectedLocation.field2,
-        selectedNPK.field1,
-        selectedNPK.field2,
-        selectedNPK.field3
+        selectedNPK.nitrogen,
+        selectedNPK.phosphorus,
+        selectedNPK.potassium
       );
     } else {
       Swal.fire({
@@ -132,20 +164,20 @@ const ThingSpeakDataManagement = () => {
       })
       .then(data => {
         if (data === 0) {
-          throw new Error('Failed to update Channel 3');
+          throw new Error('Failed to update Database');
         }
         Swal.fire({
           title: 'Success!',
-          text: 'Data successfully added to Channel 3.',
+          text: 'Data successfully added to Database.',
           icon: 'success',
           confirmButtonText: 'OK'
         });
       })
       .catch(error => {
-        console.error('Error updating Channel 3:', error);
+        console.error('Error updating Database:', error);
         Swal.fire({
           title: 'Error!',
-          text: 'Failed to update Channel 3. Please try again later.',
+          text: 'Failed to update Database. Please try again later.',
           icon: 'error',
           confirmButtonText: 'OK'
         });
@@ -185,17 +217,17 @@ const ThingSpeakDataManagement = () => {
           NPK Data Tracker
         </a>
         <form className="ml-auto">
-          <button className="btn btn-outline-dark me-2" onClick={() => window.location.href='channel3'} type="button">Channel3</button>
+          <button className="btn btn-outline-dark me-2" onClick={() => window.location.href='channel3'} type="button">Data table</button>
           <button className="btn btn-outline-dark me-2" onClick={() => window.location.href='Dashboard'} type="button">Dashboard</button>
           <button className="btn btn-sm btn-outline-dark" onClick={() => window.location.href='/'} type="button">Logout</button>
         </form>
       </nav>
 
-      <h1 className="text-center"><u>ThingSpeak Data Management</u></h1>
+      <h1 className="text-center"><u>Database</u></h1>
 
-      <div className="table-container ">
+      <div className="table-container">
         <div>
-          <h2>Location Data (Channel 1)</h2>
+          <h2>Location Data </h2>
           <table id="locationTable">
             <thead>
               <tr>
@@ -225,40 +257,40 @@ const ThingSpeakDataManagement = () => {
         </div>
 
         <div>
-          <h2>N, P, K Values (Channel 2)</h2>
-          <table id="npkTable">
-            <thead>
-              <tr>
-                <th>Select</th>
-                <th>N</th>
-                <th>P</th>
-                <th>K</th>
-                <th>Timestamp</th>
-              </tr>
-            </thead>
-            <tbody>
-              {npkData.map((item, index) => (
-                <tr key={index}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={item.selected}
-                      onChange={() => handleCheckboxChange(index, 'npk')}
-                    />
-                  </td>
-                  <td>{item.field1}</td>
-                  <td>{item.field2}</td>
-                  <td>{item.field3}</td>
-                  <td>{item.created_at}</td>
+          <h2>N, P, K Values </h2>
+          <div className="npk-table-container">
+            <table id="npkTable">
+              <thead>
+                <tr>
+                  <th>Select</th>
+                  <th>N</th>
+                  <th>P</th>
+                  <th>K</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {npkData.map((item, index) => (
+                  <tr key={index}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={item.selected}
+                        onChange={() => handleCheckboxChange(index, 'npk')}
+                      />
+                    </td>
+                    <td>{item.nitrogen}</td>
+                    <td>{item.phosphorus}</td>
+                    <td>{item.potassium}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       <div className="container-fluid">
-        <button id="sendButton" onClick={addData}>Add Selected Data to Channel 3</button>
+        <button id="sendButton" onClick={addData}>Add Selected Data to Table</button>
       </div>
 
       <hr className="divider" />
@@ -276,6 +308,7 @@ const ThingSpeakDataManagement = () => {
         <label htmlFor="kValue">K Value:</label>
         <input type="number" id="kValue" name="kValue" value={manualData.kValue} onChange={handleManualInputChange} required />
         <button id="submit" type="submit">Update Channel 3</button>
+        <button id="submit2" onClick={() => window.location.href='channel3'} >See updated Data</button>
       </form>
     </div>
   );

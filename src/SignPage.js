@@ -1,22 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './SignPage.css';
 import Swal from 'sweetalert2';
-import { initializeApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 
+import {createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from './firebase';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCgyCXHMuQvI-ilCOVQIyjUuR464qNqE4s",
-  authDomain: "npk-data-tracker-655de.firebaseapp.com",
-  projectId: "npk-data-tracker-655de",
-  storageBucket: "npk-data-tracker-655de.appspot.com",
-  messagingSenderId: "838481789154",
-  appId: "1:838481789154:web:ca4022ef49730c28bb1ebb"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 
 const SignPage = () => {
   const [isSignIn, setIsSignIn] = useState(true);

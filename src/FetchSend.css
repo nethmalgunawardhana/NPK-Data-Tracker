@@ -1,4 +1,3 @@
-/* ThingSpeakDataManagement.css */
 body {
     font-family: Arial, sans-serif;
     min-height: 100vh;
@@ -39,6 +38,36 @@ th, td {
 
 th {
     background-color: #f4f4f4;
+}
+
+.npk-table-container {
+    height: 652px; /* Adjust this value to fit approximately 15 rows */
+    overflow-y: auto;
+    border: 1px solid #ddd;
+}
+
+.npk-table-container table {
+    width: 100%;
+}
+
+.npk-table-container thead {
+    position: sticky;
+    top: 0;
+    background-color: #f4f4f4;
+    z-index: 1;
+}
+
+
+.npk-table-container td {
+    border: 1px solid #ddd;
+    background-color: #000000;
+}
+.npk-table-container th{
+   background-color: #2f2f2f; 
+}
+
+.npk-table-container th {
+    border-top: none;
 }
 
 #sendButton {
@@ -116,9 +145,22 @@ label {
     transition: background-color 0.3s ease;
     border-radius: 10px;
 }
+#submit2{
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #022e02;
+    color: white;
+    border: none;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border-radius: 10px;
+
+}
 
 button:hover {
-    background-color: #033c03;
+    background-color: #066406;
 }
 
 .navbar-left {

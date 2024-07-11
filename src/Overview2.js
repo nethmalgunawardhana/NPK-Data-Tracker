@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Chart } from 'react-google-charts';
 import './Overview.css';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
+import { db } from './firebase';
+
+
 
 const GaugeMeters = () => {
   const [chartData, setChartData] = useState([
@@ -11,6 +16,12 @@ const GaugeMeters = () => {
   ]);
 
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [userInputs, setUserInputs] = useState({
+    Nitrogen: '',
+    Phosphorus: '',
+    Potassium: ''
+  });
+  const [comparisonMessage, setComparisonMessage] = useState([]);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -29,51 +40,116 @@ const GaugeMeters = () => {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const channelID = '2525297';
-      const readAPIKey = 'IT6C7L8OKXB6KZ9B';
-      const fields = [1, 2, 3];
-
-      try {
-        const newData = await Promise.all(
-          fields.map(async (field) => {
-            const url = `https://api.thingspeak.com/channels/${channelID}/fields/${field}/last.json?api_key=${readAPIKey}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            return parseFloat(data[`field${field}`]);
-          })
-        );
-
-        setChartData([
+    const docRef = doc(db, "NPK", "DATA");
+    const unsubscribe = onSnapshot(docRef, (doc) => {
+      if (doc.exists()) {
+        const data = doc.data();
+        const newData = [
           ['Label', 'Value'],
-          ['Nitrogen', newData[0]],
-          ['Phosphorus', newData[1]],
-          ['Potassium', newData[2]],
-        ]);
-      } catch (error) {
-        console.error('Error fetching data:', error);
+          ['Nitrogen', data.nitrogen],
+          ['Phosphorus', data.phosphorus],
+          ['Potassium', data.potassium],
+        ];
+        setChartData(newData);
+        updateComparisonMessage([data.nitrogen, data.phosphorus, data.potassium]);
+      } else {
+        console.log("No such document!");
       }
-    };
+    });
 
-    fetchData();
-    const interval = setInterval(fetchData, 500);
+    return () => unsubscribe();
+  }, [userInputs]);
 
-    return () => clearInterval(interval);
-  }, []);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setUserInputs(prevInputs => ({
+      ...prevInputs,
+      [name]: value
+    }));
+  };
+
+  const updateComparisonMessage = (newData) => {
+    const elements = ['Nitrogen', 'Phosphorus', 'Potassium'];
+    let messages = [];
+
+    elements.forEach((element, index) => {
+      const fetchedValue = newData[index];
+      const userValue = parseFloat(userInputs[element]);
+
+      if (!isNaN(userValue)) {
+        let message = '';
+        let color = '';
+
+        if (fetchedValue > userValue) {
+          message = `Excessiveness of ${element} can lead to environmental pollution.`;
+          color = 'red';
+        } else if (fetchedValue < userValue) {
+          message = `Less of ${element} is bad for the soil.`;
+          color = 'red';
+        } else {
+          message = `${element} level is good.`;
+          color = 'green';
+        }
+
+        messages.push({ text: message, color: color });
+      }
+    });
+
+    setComparisonMessage(messages.length > 0 ? messages : [{ text: 'Please enter values for comparison.', color: 'black' }]);
+  };
 
   return (
-    <div className="gauge-container">
-      {['Nitrogen', 'Phosphorus', 'Potassium'].map((element, index) => (
-        <div key={element} className="gauge">
-          <Chart
-            chartType="Gauge"
-            width={`${options.width}px`}
-            height={`${options.height}px`}
-            data={[['Label', 'Value'], [element, chartData[index + 1][1]]]}
-            options={{...options, title: element}}
-          />
+    <div style={{ textAlign: 'center' }}>
+      <div className="gauge-container">
+        {['Nitrogen', 'Phosphorus', 'Potassium'].map((element, index) => (
+          <div key={element} className="gauge">
+            <Chart
+              chartType="Gauge"
+              width={`${options.width}px`}
+              height={`${options.height}px`}
+              data={[['Label', 'Value'], [element, chartData[index + 1][1]]]}
+              options={{...options, title: element}}
+            />
+            <input
+              type="number"
+              name={element}
+              value={userInputs[element]}
+              onChange={handleInputChange}
+              placeholder={`Enter ${element} value`}
+              style={{
+                width: '100%',
+                padding: '5px',
+                margin: '10px 0',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+        ))}
+        <div style={{
+          backgroundColor: '#f0f0f0',
+          padding: '20px',
+          marginTop: '30px',
+          borderRadius: '10px',
+          color:'black',
+          fontSize: '18px',
+          lineHeight: '1.6',
+          maxWidth: '800px',
+          margin: '30px auto',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+          height: '315px',
+          width: '450px',
+          textAlign: 'left'
+        }}>
+          <strong style={{ fontSize: '35px', display: 'block', marginBottom: '10px'  }}><u>Comparison Result:</u></strong>
+          <ul style={{ paddingLeft: '20px' }}>
+            {comparisonMessage.map((message, index) => (
+              <li key={index} style={{ color: message.color, marginBottom: '10px' }}>
+                {message.text}
+              </li>
+            ))}
+          </ul>
         </div>
-      ))}
+      </div>
     </div>
   );
 };

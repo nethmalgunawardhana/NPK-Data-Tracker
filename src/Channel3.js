@@ -68,7 +68,7 @@ const Channel3Table = () => {
           <button className="btn btn-sm btn-outline-dark" onClick={() => window.location.href='/'} type="button">Logout</button>
         </form>
       </nav>
-      <h1>Real-Time Location Data</h1>
+      
       <table id="dataTable">
         <thead>
           <tr>
