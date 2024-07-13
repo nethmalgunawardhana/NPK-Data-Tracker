@@ -57,11 +57,15 @@ const ThingSpeakDataManagement = () => {
         return response.json();
       })
       .then(data => {
-        setData(data.feeds.map(feed => ({
-          ...feed,
-          created_at: new Date(feed.created_at).toLocaleString(),
-          selected: false
-        })));
+        setData(prevData => {
+          const newData = data.feeds.map(feed => ({
+            ...feed,
+            entry_id: feed.entry_id,
+            created_at: new Date(feed.created_at).toLocaleString(),
+            selected: prevData.find(item => item.entry_id === feed.entry_id)?.selected || false
+          }));
+          return newData;
+        });
       })
       .catch(error => {
         console.error('Error fetching data:', error);
@@ -77,16 +81,29 @@ const ThingSpeakDataManagement = () => {
   const fetchFirestoreData = () => {
     const npkRef = collection(db, 'NPK');
     const q = query(npkRef, orderBy('timestamp', 'desc'), limit(maxResultsNPK));
-
+  
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const npkData = querySnapshot.docs.map(doc => {
         const data = doc.data();
         console.log('Firestore document data:', data);
         
+        let timestamp;
+        if (data.timestamp && typeof data.timestamp.toDate === 'function') {
+          timestamp = data.timestamp.toDate();
+        } else if (data.timestamp && data.timestamp.seconds) {
+          timestamp = new Date(data.timestamp.seconds * 1000);
+        } else if (typeof data.timestamp === 'number') {
+          timestamp = new Date(data.timestamp);
+        } else {
+          timestamp = new Date();
+        }
+  
         return {
+          id: doc.id,
           nitrogen: data.nitrogen,
           phosphorus: data.phosphorus,
           potassium: data.potassium,
+          timestamp: timestamp,
           selected: false
         };
       });
@@ -100,15 +117,20 @@ const ThingSpeakDataManagement = () => {
         confirmButtonText: 'OK'
       });
     });
-
+  
     return unsubscribe;
   };
-
-  const handleCheckboxChange = (index, dataType) => {
+  const handleCheckboxChange = (id, dataType) => {
     if (dataType === 'location') {
-      setLocationData(locationData.map((item, i) => ({...item, selected: i === index ? !item.selected : false})));
+      setLocationData(prevData => prevData.map(item => ({
+        ...item,
+        selected: item.entry_id === id ? !item.selected : false
+      })));
     } else {
-      setNpkData(npkData.map((item, i) => ({...item, selected: i === index ? !item.selected : false})));
+      setNpkData(prevData => prevData.map(item => ({
+        ...item,
+        selected: item.id === id ? !item.selected : false
+      })));
     }
   };
 
@@ -238,13 +260,13 @@ const ThingSpeakDataManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {locationData.map((item, index) => (
-                <tr key={index}>
+              {locationData.map((item) => (
+                <tr key={item.entry_id}>
                   <td>
                     <input
                       type="checkbox"
                       checked={item.selected}
-                      onChange={() => handleCheckboxChange(index, 'location')}
+                      onChange={() => handleCheckboxChange(item.entry_id, 'location')}
                     />
                   </td>
                   <td>{item.field1}</td>
@@ -269,13 +291,13 @@ const ThingSpeakDataManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {npkData.map((item, index) => (
-                  <tr key={index}>
+                {npkData.map((item) => (
+                  <tr key={item.id}>
                     <td>
                       <input
                         type="checkbox"
                         checked={item.selected}
-                        onChange={() => handleCheckboxChange(index, 'npk')}
+                        onChange={() => handleCheckboxChange(item.id, 'npk')}
                       />
                     </td>
                     <td>{item.nitrogen}</td>
